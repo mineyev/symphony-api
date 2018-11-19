@@ -1,0 +1,60 @@
+version: '3.4'
+
+services:
+  consul-cluster:
+    image: consul:latest
+    environment:
+        CONSUL_LOCAL_CONFIG: |
+          {
+              "datacenter": "dev-dc",
+              "bind_addr" : "0.0.0.0",
+              "client_addr" : "0.0.0.0",
+              "log_level": "INFO",
+              "node_name": "consul-cluster",
+              "server": true,
+              "ui": true
+          }
+    networks:
+      internal:
+        ipv4_address: 172.28.0.100
+  nginx:
+    build: ./nginx
+    environment:
+      CONSUL_NODE_NAME: symphony-api-nginx
+      CONSUL_SERVICE_NAME: symphony-api-nginx-main
+      CONSUL_HTTP_ADDR: 172.28.0.100:8500
+  backend:
+    build: ./backend
+    environment:
+      CONSUL_SERVICE_NAME: symphony-api-backend
+      CONSUL_HTTP_ADDR: 172.28.0.100:8500
+  db:
+    image: postgres:11.1-alpine
+    environment:
+      CONSUL_SERVICE_NAME: symphony-api-db
+      CONSUL_HTTP_ADDR: 172.28.0.100:8500
+      POSTGRES_HOST: db
+      POSTGRES_DB: db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+  redis:
+    image: redis:4.0-alpine
+    environment:
+      CONSUL_SERVICE_NAME: symphony-api-redis
+      CONSUL_HTTP_ADDR: 172.28.0.100:8500
+  pgbouncer:
+    image: redis:4.0-alpine
+    environment:
+      CONSUL_SERVICE_NAME: symphony-api-redis
+      CONSUL_HTTP_ADDR: 172.28.0.100:8500
+
+networks:
+  internal:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
+
+
+
